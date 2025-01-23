@@ -1,5 +1,6 @@
 package org.example.expert.domain.todo.repository;
 
+import com.querydsl.core.QueryFactory;
 import org.example.expert.domain.todo.entity.Todo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +40,6 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
             "WHERE t.modifiedAt <= :endDateTime " +
             "ORDER BY t.modifiedAt DESC")
     Page<Todo> findAllByModifiedAtBefore(@Param("endDateTime") LocalDateTime endDateTime, Pageable pageable);
-
 
     @Query("SELECT t FROM Todo t " +
             "LEFT JOIN t.user " +
