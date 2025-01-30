@@ -56,6 +56,14 @@ public class JwtUtil {
         throw new ServerException("Not Found Token");
     }
 
+    public String extractEmail(String token) {
+        return extractClaims(token).get("email", String.class);
+    }
+
+    public String extractRoles(String token) {
+        return extractClaims(token).get("userRole", String.class);
+    }
+
     public Claims extractClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)

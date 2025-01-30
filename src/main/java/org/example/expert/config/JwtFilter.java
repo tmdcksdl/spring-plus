@@ -11,11 +11,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.expert.domain.user.enums.UserRole;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
+@Component
 public class JwtFilter implements Filter {
 
     private final JwtUtil jwtUtil;
@@ -55,22 +62,14 @@ public class JwtFilter implements Filter {
                 return;
             }
 
-            UserRole userRole = UserRole.valueOf(claims.get("userRole", String.class));
+            // 인가 -> 어떻게 할것인가..? 고민을 해보고
+            String email = jwtUtil.extractEmail(jwt);
+            String userRole = jwtUtil.extractRoles(jwt);
+            UserRole role = UserRole.of(userRole);
 
-            httpRequest.setAttribute("userId", Long.parseLong(claims.getSubject()));
-            httpRequest.setAttribute("email", claims.get("email"));
-            httpRequest.setAttribute("nickname", claims.get("nickname"));
-            httpRequest.setAttribute("userRole", claims.get("userRole"));
+            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role.name()));
 
-            if (url.startsWith("/admin")) {
-                // 관리자 권한이 없는 경우 403을 반환합니다.
-                if (!UserRole.ADMIN.equals(userRole)) {
-                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 없습니다.");
-                    return;
-                }
-                chain.doFilter(request, response);
-                return;
-            }
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email, null, authorities));
 
             chain.doFilter(request, response);
         } catch (SecurityException | MalformedJwtException e) {
@@ -93,3 +92,6 @@ public class JwtFilter implements Filter {
         Filter.super.destroy();
     }
 }
+
+// 인증: 서비스를 이용할 수 있는가
+// 인가: 특정 서비스를 이용할 수 있는 권한이 있는가
